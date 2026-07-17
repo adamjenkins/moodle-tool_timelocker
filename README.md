@@ -36,6 +36,12 @@ writes native module open/close dates rather than reinventing availability.
 Activities left unselected are untouched by default, but can optionally have
 their lock date cleared ("Reset unselected").
 
+Each course keeps a single Time locker schedule. Switching to a different
+activity type and saving replaces the previous selection: any student notes
+for the previously selected activities stop showing, although lock dates that
+were already written to those activities' grade items remain in place (clear
+them in the gradebook, or via "Reset unselected", if no longer wanted).
+
 ## Student note
 
 Optionally, an activity can show a note on its own page telling students when

@@ -1,0 +1,26 @@
+{
+    "name": "adamjenkins/moodle-tool_timelocker",
+    "description": "A Moodle admin tool that bulk-schedules gradebook lock-after dates across a course's gradable activities on a timed-session basis",
+    "type": "moodle-tool",
+    "keywords": ["moodle", "admin tool", "gradebook", "grade lock", "scheduling"],
+    "homepage": "https://github.com/adamjenkins/moodle-tool_timelocker",
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Adam Jenkins",
+            "email": "adam@wisecat.net"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/adamjenkins/moodle-tool_timelocker/issues",
+        "source": "https://github.com/adamjenkins/moodle-tool_timelocker"
+    },
+    "require": {
+        "moodle/moodle": "^5.0",
+        "moodle/composer-installer": "*"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "*",
+        "moodlehq/moodle-cs": "*"
+    }
+}
