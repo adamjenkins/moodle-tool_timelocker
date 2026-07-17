@@ -71,12 +71,7 @@ class timelocker {
 
         foreach ($lockdates as $cmid => $locktime) {
             $cm = get_coursemodule_from_id('', $cmid, $courseid, false, MUST_EXIST);
-            $gradeitems = \grade_item::fetch_all([
-                'courseid' => $courseid,
-                'itemtype' => 'mod',
-                'itemmodule' => $cm->modname,
-                'iteminstance' => $cm->instance,
-            ]);
+            $gradeitems = $this->fetch_mod_grade_items($courseid, $cm);
             if (!$gradeitems) {
                 continue;
             }
@@ -92,12 +87,7 @@ class timelocker {
                 if ($cm->deletioninprogress || array_key_exists($cm->id, $lockdates)) {
                     continue;
                 }
-                $gradeitems = \grade_item::fetch_all([
-                    'courseid' => $courseid,
-                    'itemtype' => 'mod',
-                    'itemmodule' => $cm->modname,
-                    'iteminstance' => $cm->instance,
-                ]);
+                $gradeitems = $this->fetch_mod_grade_items($courseid, $cm);
                 if (!$gradeitems) {
                     continue;
                 }
@@ -109,6 +99,23 @@ class timelocker {
         }
 
         return $changed;
+    }
+
+    /**
+     * Fetch the itemtype='mod' grade item(s) for a course module.
+     *
+     * @param int $courseid The course ID.
+     * @param \cm_info|stdClass $cm The course module record (must have modname and instance).
+     * @return array Grade items, as returned by \grade_item::fetch_all(), or an empty array if none.
+     */
+    private function fetch_mod_grade_items(int $courseid, $cm): array {
+        $gradeitems = \grade_item::fetch_all([
+            'courseid' => $courseid,
+            'itemtype' => 'mod',
+            'itemmodule' => $cm->modname,
+            'iteminstance' => $cm->instance,
+        ]);
+        return $gradeitems ?: [];
     }
 
     /**
@@ -138,6 +145,23 @@ class timelocker {
         $settings->resetunselected = !empty($formdata->resetunselected) ? 1 : 0;
         $settings->timemodified = time();
 
+        // Only cmids that actually belong to this course and modtype may be persisted, otherwise
+        // an editing teacher in one course could plant an item row for another course's/type's cmid.
+        // get_instances_of() is keyed by instance id, not cmid, so read each cm_info's ->id.
+        $validcmids = array_map(function ($cm) {
+            return $cm->id;
+        }, get_fast_modinfo($courseid)->get_instances_of($formdata->modtype));
+
+        $cmids = !empty($formdata->cmids) ? array_map('intval', (array) $formdata->cmids) : [];
+        $cmids = array_intersect($cmids, $validcmids);
+
+        $shownotecmids = !empty($formdata->shownote_cmids)
+            ? array_map('intval', (array) $formdata->shownote_cmids)
+            : [];
+        $shownotecmids = array_flip(array_intersect($shownotecmids, $validcmids));
+
+        $transaction = $DB->start_delegated_transaction();
+
         if (!empty($settings->id)) {
             $DB->update_record('tool_timelocker', $settings);
         } else {
@@ -146,11 +170,6 @@ class timelocker {
 
         $DB->delete_records('tool_timelocker_items', ['timelockerid' => $settings->id]);
 
-        $cmids = !empty($formdata->cmids) ? array_map('intval', (array) $formdata->cmids) : [];
-        $shownotecmids = !empty($formdata->shownote_cmids)
-            ? array_flip(array_map('intval', (array) $formdata->shownote_cmids))
-            : [];
-
         foreach ($cmids as $cmid) {
             $item = new stdClass();
             $item->timelockerid = $settings->id;
@@ -158,6 +177,8 @@ class timelocker {
             $item->shownote = array_key_exists($cmid, $shownotecmids) ? 1 : 0;
             $DB->insert_record('tool_timelocker_items', $item);
         }
+
+        $transaction->allow_commit();
 
         return $settings;
     }
@@ -191,20 +212,21 @@ class timelocker {
                 continue;
             }
 
-            $gradeitems = \grade_item::fetch_all([
-                'courseid' => $courseid,
-                'itemtype' => 'mod',
-                'itemmodule' => $cm->modname,
-                'iteminstance' => $cm->instance,
-            ]);
+            $gradeitems = $this->fetch_mod_grade_items($courseid, $cm);
             $gradeitemids = [];
-            $locktime = 0;
+            $futurelocktimes = [];
             if ($gradeitems) {
                 foreach ($gradeitems as $gradeitem) {
                     $gradeitemids[] = (int) $gradeitem->id;
-                    $locktime = max($locktime, (int) $gradeitem->get_locktime());
+                    $itemlocktime = (int) $gradeitem->get_locktime();
+                    if ($itemlocktime > 0) {
+                        $futurelocktimes[] = $itemlocktime;
+                    }
                 }
             }
+            // Use the earliest future locktime, matching the student-facing note's rule; 0 (none) if
+            // all of the cm's grade items are unlocked.
+            $locktime = $futurelocktimes ? min($futurelocktimes) : 0;
 
             $selected = array_key_exists($cm->id, $existingitems);
             $shownote = $selected

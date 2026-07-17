@@ -80,7 +80,12 @@ final class timelocker_test extends \advanced_testcase {
         $dates = $mgr->compute_lockdates([$cm1, $cm2], $start, 7, 1);
         $count = $mgr->apply_locks($dates, 'quiz', $course->id, false);
         $this->assertSame(2, $count);
-        $gi1 = \grade_item::fetch(['courseid' => $course->id, 'itemtype' => 'mod', 'itemmodule' => 'quiz', 'iteminstance' => $q1->id]);
+        $gi1 = \grade_item::fetch([
+            'courseid' => $course->id,
+            'itemtype' => 'mod',
+            'itemmodule' => 'quiz',
+            'iteminstance' => $q1->id,
+        ]);
         $this->assertSame($dates[$cm1], (int) $gi1->get_locktime());
     }
 
@@ -170,5 +175,51 @@ final class timelocker_test extends \advanced_testcase {
         $this->assertSame(1, (int) $items[0]->shownote);
         $this->assertSame((int) $cm2, (int) $items[1]->cmid);
         $this->assertSame(0, (int) $items[1]->shownote);
+    }
+
+    /**
+     * get_table_data() must return one row per gradable activity of the
+     * settings' modtype, in course order, with the exact expected keys and
+     * correct selection state.
+     *
+     * @covers \tool_timelocker\timelocker::get_table_data
+     */
+    public function test_get_table_data(): void {
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course();
+        $q1 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'grade' => 100]);
+        $q2 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'grade' => 100]);
+        $cm1 = get_coursemodule_from_instance('quiz', $q1->id)->id;
+        $cm2 = get_coursemodule_from_instance('quiz', $q2->id)->id;
+
+        $mgr = new \tool_timelocker\timelocker();
+        $formdata = new \stdClass();
+        $formdata->modtype = 'quiz';
+        $formdata->schedulestart = 2000000000;
+        $formdata->sessionlength = 7;
+        $formdata->activitiespersession = 1;
+        $formdata->shownote = 1;
+        $formdata->resetunselected = 0;
+        $formdata->cmids = [$cm1];
+        $formdata->shownote_cmids = [$cm1];
+        $settings = $mgr->update($formdata, $course->id);
+
+        $rows = $mgr->get_table_data($settings);
+
+        $this->assertCount(2, $rows);
+        $this->assertSame((int) $cm1, (int) $rows[0]['cmid']);
+        $this->assertSame((int) $cm2, (int) $rows[1]['cmid']);
+
+        foreach ($rows as $row) {
+            $this->assertSame(
+                ['cmid', 'name', 'gradeitemids', 'locktime', 'selected', 'shownote'],
+                array_keys($row)
+            );
+        }
+
+        $this->assertTrue($rows[0]['selected']);
+        $this->assertFalse($rows[1]['selected']);
+        $this->assertNotEmpty($rows[0]['gradeitemids']);
+        $this->assertIsInt($rows[0]['locktime']);
     }
 }
