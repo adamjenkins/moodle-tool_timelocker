@@ -96,6 +96,10 @@ class hook_callbacks {
             'islocked' => (bool) $lockedat,
             'date' => userdate($lockedat ?: $locktime),
         ]);
+        // This hook fires before standard_top_of_body_html() runs, which is
+        // itself rendered before the activity header, so add_header_extras()
+        // here lands the note in the header-extras region next to the
+        // activity's dates.
         $PAGE->add_header_extras($html);
     }
 }
