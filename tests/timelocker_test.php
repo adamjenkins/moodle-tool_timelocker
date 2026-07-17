@@ -249,20 +249,19 @@ final class timelocker_test extends \advanced_testcase {
         global $CFG;
         require_once($CFG->libdir . '/gradelib.php');
         $this->resetAfterTest();
-        $course = $this->getDataGenerator()->create_course();
-        $q1 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'grade' => 100]);
-        $q2 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'grade' => 100]);
-        $q3 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'grade' => 100]);
+        $course = $this->getDataGenerator()->create_course(['numsections' => 3], ['createsections' => true]);
+        // Create the quizzes into sections 3, 1, 2 respectively, so that their
+        // course-appearance order (by section: q2, q3, q1) is deliberately
+        // different from creation order (q1, q2, q3) = cmid-ascending order.
+        // Placing them at creation avoids any cm-move API: cmactions::move_before()
+        // is Moodle 5.2 only (MDL-86854) and moveto_module() is deprecated there,
+        // whereas the generator's section option behaves the same on 5.0-5.2.
+        $q1 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'grade' => 100, 'section' => 3]);
+        $q2 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'grade' => 100, 'section' => 1]);
+        $q3 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'grade' => 100, 'section' => 2]);
         $cm1 = (int) get_coursemodule_from_instance('quiz', $q1->id)->id;
         $cm2 = (int) get_coursemodule_from_instance('quiz', $q2->id)->id;
         $cm3 = (int) get_coursemodule_from_instance('quiz', $q3->id)->id;
-
-        // Creation order is cm1, cm2, cm3. Move quiz 3 to before quiz 1, so
-        // course-position order becomes cm3, cm1, cm2 - deliberately
-        // different from creation order.
-        \core_courseformat\formatactions::cm($course)->move_before($cm3, $cm1);
-        rebuild_course_cache($course->id, true);
-        get_fast_modinfo($course->id, 0, true);
 
         $mgr = new \tool_timelocker\timelocker();
         $settings = (object) [
@@ -276,7 +275,10 @@ final class timelocker_test extends \advanced_testcase {
 
         $this->assertCount(3, $rows);
         $actualcmids = array_map('intval', array_column($rows, 'cmid'));
-        $this->assertSame([$cm3, $cm1, $cm2], $actualcmids);
+        $this->assertSame([$cm2, $cm3, $cm1], $actualcmids);
+        // Guard the test's own premise: course order must differ from creation
+        // order, otherwise this would pass even on a creation-ordered result.
+        $this->assertNotSame([$cm1, $cm2, $cm3], $actualcmids);
     }
 
     /**

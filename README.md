@@ -46,10 +46,17 @@ them in the gradebook, or via "Reset unselected", if no longer wanted).
 
 Optionally, an activity can show a note on its own page telling students when
 its grade will lock (or that it has already locked). The note is added via
-the Hooks API, appearing near the activity's dates in the same region as
-other activity-page notices, and always reflects the grade item's *live*
-`locktime`/`locked` state — so it stays accurate even if a teacher
-subsequently changes the lock date directly in the gradebook.
+the Hooks API and always reflects the grade item's *live* `locktime`/`locked`
+state — so it stays accurate even if a teacher subsequently changes the lock
+date directly in the gradebook.
+
+Where the note appears depends on the Moodle version, as the header-extras
+region it prefers (`$PAGE->add_header_extras()`) was only added in Moodle 5.2:
+
+| Moodle | Note placement |
+| --- | --- |
+| 5.2 and later | Near the activity's dates, in the same region as other activity-page notices |
+| 5.0, 5.1 | At the top of the activity page |
 
 ## Settings
 

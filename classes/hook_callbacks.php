@@ -96,10 +96,17 @@ class hook_callbacks {
             'islocked' => (bool) $lockedat,
             'date' => userdate($lockedat ?: $locktime),
         ]);
-        // This hook fires before standard_top_of_body_html() runs, which is
-        // itself rendered before the activity header, so add_header_extras()
-        // here lands the note in the header-extras region next to the
-        // activity's dates.
-        $PAGE->add_header_extras($html);
+        // The add_header_extras() method on moodle_page only exists in Moodle 5.2
+        // and up (MDL-87931); this plugin also supports 5.0 and 5.1. Where it exists
+        // it is preferred: this hook fires before standard_top_of_body_html() runs,
+        // which is itself rendered before the activity header, so the note lands
+        // in the header-extras region next to the activity's dates. On 5.0/5.1
+        // fall back to the hook's own output, which renders the same note at the
+        // top of the body instead.
+        if (method_exists($PAGE, 'add_header_extras')) {
+            $PAGE->add_header_extras($html);
+        } else {
+            $hook->add_html($html);
+        }
     }
 }
