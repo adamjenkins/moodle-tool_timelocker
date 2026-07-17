@@ -27,6 +27,8 @@ require(__DIR__ . '/../../../config.php');
 use tool_timelocker\timelocker;
 use tool_timelocker\modtypes;
 use tool_timelocker\form\timelocker_form;
+use tool_timelocker\event\locks_updated;
+use tool_timelocker\event\locks_viewed;
 
 $courseid = required_param('courseid', PARAM_INT);
 $course = get_course($courseid);
@@ -34,6 +36,8 @@ $course = get_course($courseid);
 require_login($course);
 $context = context_course::instance($courseid);
 require_capability('tool/timelocker:manage', $context);
+
+locks_viewed::create(['context' => $context])->trigger();
 
 $url = new moodle_url('/admin/tool/timelocker/view.php', ['courseid' => $courseid]);
 $PAGE->set_url($url);
@@ -121,6 +125,7 @@ if ($fromform = $mform->get_data()) {
             (int) $settings->activitiespersession
         );
         $count = $manager->apply_locks($lockdates, $settings->modtype, $courseid, (bool) $settings->resetunselected);
+        locks_updated::create(['context' => $context])->trigger();
         \core\notification::success(get_string('locksapplied', 'tool_timelocker', $count));
 
         if (isset($fromform->submitbutton2)) {

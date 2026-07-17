@@ -278,4 +278,61 @@ final class timelocker_test extends \advanced_testcase {
         $actualcmids = array_map('intval', array_column($rows, 'cmid'));
         $this->assertSame([$cm3, $cm1, $cm2], $actualcmids);
     }
+
+    /**
+     * Deleting a course must clean up its tool_timelocker configuration row
+     * and all associated tool_timelocker_items rows, leaving no orphans.
+     *
+     * @covers \tool_timelocker\observer::course_deleted
+     */
+    public function test_course_deleted_cleans_plugin_rows(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course();
+        $q1 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'grade' => 100]);
+        $cm1 = get_coursemodule_from_instance('quiz', $q1->id)->id;
+
+        $mgr = new \tool_timelocker\timelocker();
+        $formdata = new \stdClass();
+        $formdata->modtype = 'quiz';
+        $formdata->schedulestart = 2000000000;
+        $formdata->sessionlength = 7;
+        $formdata->activitiespersession = 1;
+        $formdata->shownote = 1;
+        $formdata->resetunselected = 0;
+        $formdata->cmids = [$cm1];
+        $formdata->shownote_cmids = [$cm1];
+        $settings = $mgr->update($formdata, $course->id);
+        $timelockerid = $settings->id;
+
+        $this->assertSame(1, $DB->count_records('tool_timelocker', ['courseid' => $course->id]));
+        $this->assertSame(1, $DB->count_records('tool_timelocker_items', ['timelockerid' => $timelockerid]));
+
+        delete_course($course, false);
+
+        $this->assertSame(0, $DB->count_records('tool_timelocker', ['courseid' => $course->id]));
+        $this->assertSame(0, $DB->count_records('tool_timelocker_items', ['timelockerid' => $timelockerid]));
+    }
+
+    /**
+     * The locks_updated event must construct and trigger correctly with a
+     * course context, matching \tool_timelocker\event\locks_updated.
+     *
+     * @covers \tool_timelocker\event\locks_updated
+     */
+    public function test_locks_updated_event(): void {
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course();
+        $context = \context_course::instance($course->id);
+
+        $sink = $this->redirectEvents();
+        \tool_timelocker\event\locks_updated::create(['context' => $context])->trigger();
+        $events = $sink->get_events();
+        $sink->close();
+
+        $this->assertCount(1, $events);
+        $event = reset($events);
+        $this->assertInstanceOf(\tool_timelocker\event\locks_updated::class, $event);
+        $this->assertEquals($context, $event->get_context());
+    }
 }
