@@ -180,11 +180,14 @@ final class timelocker_test extends \advanced_testcase {
     /**
      * get_table_data() must return one row per gradable activity of the
      * settings' modtype, in course order, with the exact expected keys and
-     * correct selection state.
+     * correct selection state. The locktime field must reflect the earliest
+     * future locktime from the activity's grade items.
      *
      * @covers \tool_timelocker\timelocker::get_table_data
      */
     public function test_get_table_data(): void {
+        global $CFG;
+        require_once($CFG->libdir . '/gradelib.php');
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course();
         $q1 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'grade' => 100]);
@@ -204,6 +207,13 @@ final class timelocker_test extends \advanced_testcase {
         $formdata->shownote_cmids = [$cm1];
         $settings = $mgr->update($formdata, $course->id);
 
+        // Apply locks to exercise the aggregation logic: cm1 gets a future locktime,
+        // cm2 remains unlocked.
+        $start = 2000000000;
+        $lockdates = $mgr->compute_lockdates([$cm1], $start, 7, 1);
+        $mgr->apply_locks($lockdates, 'quiz', $course->id, false);
+        $expectedlocktime = $start + 7 * DAYSECS;
+
         $rows = $mgr->get_table_data($settings);
 
         $this->assertCount(2, $rows);
@@ -221,5 +231,9 @@ final class timelocker_test extends \advanced_testcase {
         $this->assertFalse($rows[1]['selected']);
         $this->assertNotEmpty($rows[0]['gradeitemids']);
         $this->assertIsInt($rows[0]['locktime']);
+        // Verify the earliest-future-locktime aggregation: cm1 should have the applied locktime.
+        $this->assertSame($expectedlocktime, $rows[0]['locktime']);
+        // CM2 should be unlocked (0).
+        $this->assertSame(0, $rows[1]['locktime']);
     }
 }

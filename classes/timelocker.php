@@ -148,9 +148,7 @@ class timelocker {
         // Only cmids that actually belong to this course and modtype may be persisted, otherwise
         // an editing teacher in one course could plant an item row for another course's/type's cmid.
         // get_instances_of() is keyed by instance id, not cmid, so read each cm_info's ->id.
-        $validcmids = array_map(function ($cm) {
-            return $cm->id;
-        }, get_fast_modinfo($courseid)->get_instances_of($formdata->modtype));
+        $validcmids = array_map(fn($cm) => (int) $cm->id, get_fast_modinfo($courseid)->get_instances_of($formdata->modtype));
 
         $cmids = !empty($formdata->cmids) ? array_map('intval', (array) $formdata->cmids) : [];
         $cmids = array_intersect($cmids, $validcmids);
