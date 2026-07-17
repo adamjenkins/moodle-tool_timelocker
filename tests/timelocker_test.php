@@ -236,4 +236,46 @@ final class timelocker_test extends \advanced_testcase {
         // CM2 should be unlocked (0).
         $this->assertSame(0, $rows[1]['locktime']);
     }
+
+    /**
+     * get_table_data() must list activities in COURSE-APPEARANCE order
+     * (section + position), not creation/instance-id order. This matters
+     * because the returned row order also drives compute_lockdates()'s
+     * session assignment.
+     *
+     * @covers \tool_timelocker\timelocker::get_table_data
+     */
+    public function test_get_table_data_course_order(): void {
+        global $CFG;
+        require_once($CFG->libdir . '/gradelib.php');
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course();
+        $q1 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'grade' => 100]);
+        $q2 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'grade' => 100]);
+        $q3 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'grade' => 100]);
+        $cm1 = (int) get_coursemodule_from_instance('quiz', $q1->id)->id;
+        $cm2 = (int) get_coursemodule_from_instance('quiz', $q2->id)->id;
+        $cm3 = (int) get_coursemodule_from_instance('quiz', $q3->id)->id;
+
+        // Creation order is cm1, cm2, cm3. Move quiz 3 to before quiz 1, so
+        // course-position order becomes cm3, cm1, cm2 - deliberately
+        // different from creation order.
+        \core_courseformat\formatactions::cm($course)->move_before($cm3, $cm1);
+        rebuild_course_cache($course->id, true);
+        get_fast_modinfo($course->id, 0, true);
+
+        $mgr = new \tool_timelocker\timelocker();
+        $settings = (object) [
+            'id' => 0,
+            'courseid' => $course->id,
+            'modtype' => 'quiz',
+            'shownote' => 0,
+        ];
+
+        $rows = $mgr->get_table_data($settings);
+
+        $this->assertCount(3, $rows);
+        $actualcmids = array_map('intval', array_column($rows, 'cmid'));
+        $this->assertSame([$cm3, $cm1, $cm2], $actualcmids);
+    }
 }
