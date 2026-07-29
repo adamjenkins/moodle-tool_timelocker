@@ -1,0 +1,22 @@
+# camp listing manifest — descriptive content for your plugin's page.
+# Edit freely and commit; camp ingests this file at each tagged release.
+# Schema: https://camp-registry.org/schema/listing.schema.json
+name: tool_timelocker
+summary: 'An admin tool that bulk-schedules gradebook lock-after dates across a course''s gradable activities on a timed-session basis.'
+description: |
+  Pick a module type (quizzes, assignments — any activity with a gradebook
+  grade item), split its activities into sessions, and the tool writes each
+  session's lock date straight into the grade items' native `locktime`.
+  Core's grade-lock enforcement takes it from there — no custom locking
+  engine involved.
+labels:
+  # Required disclosure labels — pick all that apply (RFC §4.7):
+  #   fully-free | freemium | paid-service | external-account
+  #   donation-supported | commercial-support-available
+  - fully-free
+# screenshots:
+#   - path: .camp/screenshots/overview.png
+#     caption: Main view
+# links:
+#   docs: https://…
+#   issues: https://…
