@@ -11,15 +11,15 @@ Feature: Bulk-schedule gradebook lock dates
       | teacher1 | Teacher   | 1        | teacher1@example.com  |
       | student1 | Student   | 1        | student1@example.com  |
     And the following "courses" exist:
-      | fullname | shortname | format |
-      | Course 1 | C1        | topics |
+      | fullname | shortname | format | enablecompletion |
+      | Course 1 | C1        | topics | 1                |
     And the following "course enrolments" exist:
       | user     | course | role           |
       | teacher1 | C1     | editingteacher |
       | student1 | C1     | student        |
     And the following "activities" exist:
-      | activity | name  | course | idnumber |
-      | quiz     | Quiz1 | C1     | quiz1    |
+      | activity | name  | course | idnumber | completion |
+      | quiz     | Quiz1 | C1     | quiz1    | 1          |
 
   Scenario: Teacher schedules a gradebook lock date for a quiz
     Given I log in as "teacher1"
@@ -58,3 +58,63 @@ Feature: Bulk-schedule gradebook lock dates
     When I log in as "student1"
     And I am on the "Quiz1" "quiz activity" page
     Then I should see "Grades lock after"
+
+  @javascript
+  Scenario: Student sees the grade-lock note on the course page when the course opts in
+    Given I log in as "teacher1"
+    And I am on "Course 1" course homepage
+    And I navigate to "Time locker" in current page administration
+    And I set the field "schedulestart[day]" to "1"
+    And I set the field "schedulestart[month]" to "January"
+    And I set the field "schedulestart[year]" to "2030"
+    And I set the field "Also show notes on the course page" to "1"
+    And I set the field with xpath "//tr[contains(normalize-space(.), 'Quiz1')][1]/td[1]/input[@type='checkbox']" to "1"
+    And I set the field with xpath "//tr[contains(normalize-space(.), 'Quiz1')][1]/td[last()]/input[@type='checkbox']" to "1"
+    And I press "Save and display"
+    Then I should see "Updated the gradebook lock date for 1 activities."
+    And I log out
+
+    When I log in as "student1"
+    And I am on "Course 1" course homepage
+    Then I should see "Grades lock after" in the "Quiz1" "activity"
+    # At the bottom of the card, not squeezed into the completion column.
+    And "[data-region='activity-card'] > .tool_timelocker-coursenote" "css_element" should exist in the "Quiz1" "activity"
+
+  @javascript
+  Scenario: The course-page note survives the course editor re-rendering its activity
+    Given I log in as "teacher1"
+    And I am on "Course 1" course homepage
+    And I navigate to "Time locker" in current page administration
+    And I set the field "schedulestart[day]" to "1"
+    And I set the field "schedulestart[month]" to "January"
+    And I set the field "schedulestart[year]" to "2030"
+    And I set the field "Also show notes on the course page" to "1"
+    And I set the field with xpath "//tr[contains(normalize-space(.), 'Quiz1')][1]/td[1]/input[@type='checkbox']" to "1"
+    And I set the field with xpath "//tr[contains(normalize-space(.), 'Quiz1')][1]/td[last()]/input[@type='checkbox']" to "1"
+    And I press "Save and display"
+    And I am on "Course 1" course homepage with editing mode on
+    And I should see "Grades lock after" in the "Quiz1" "activity"
+    When I indent right "Quiz1" activity
+    Then I should see "Grades lock after" in the "Quiz1" "activity"
+
+  @javascript
+  Scenario: The course page shows no grade-lock note when the course has not opted in
+    Given I log in as "teacher1"
+    And I am on "Course 1" course homepage
+    And I navigate to "Time locker" in current page administration
+    And I set the field "schedulestart[day]" to "1"
+    And I set the field "schedulestart[month]" to "January"
+    And I set the field "schedulestart[year]" to "2030"
+    And I set the field "Also show notes on the course page" to "0"
+    And I set the field with xpath "//tr[contains(normalize-space(.), 'Quiz1')][1]/td[1]/input[@type='checkbox']" to "1"
+    And I set the field with xpath "//tr[contains(normalize-space(.), 'Quiz1')][1]/td[last()]/input[@type='checkbox']" to "1"
+    And I press "Save and display"
+    Then I should see "Updated the gradebook lock date for 1 activities."
+    And I log out
+
+    When I log in as "student1"
+    And I am on "Course 1" course homepage
+    Then I should see "Quiz1"
+    And I should not see "Grades lock after"
+    And I am on the "Quiz1" "quiz activity" page
+    And I should see "Grades lock after"

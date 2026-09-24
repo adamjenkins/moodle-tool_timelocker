@@ -29,4 +29,8 @@ $callbacks = [
         'hook' => \core\hook\output\before_standard_top_of_body_html_generation::class,
         'callback' => \tool_timelocker\hook_callbacks::class . '::add_activity_lock_note',
     ],
+    [
+        'hook' => \core\hook\output\before_footer_html_generation::class,
+        'callback' => \tool_timelocker\hook_callbacks::class . '::add_course_page_lock_notes',
+    ],
 ];

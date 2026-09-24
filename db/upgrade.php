@@ -15,18 +15,32 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Plugin version metadata for tool_timelocker.
+ * Upgrade steps for tool_timelocker.
  *
  * @package    tool_timelocker
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+/**
+ * Upgrade the tool_timelocker plugin.
+ *
+ * @param int $oldversion The version being upgraded from.
+ * @return bool
+ */
+function xmldb_tool_timelocker_upgrade($oldversion) {
+    global $DB;
+    $dbman = $DB->get_manager();
 
-$plugin->component = 'tool_timelocker';
-$plugin->version   = 2026092400;
-$plugin->requires  = 2025041400; // Moodle 5.0.
-$plugin->supported = [500, 502];
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.0';
+    if ($oldversion < 2026092400) {
+        // Per-course option to also show switched-on lock notes on the course page.
+        $table = new xmldb_table('tool_timelocker');
+        $field = new xmldb_field('shownotecoursepage', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'shownote');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        upgrade_plugin_savepoint(true, 2026092400, 'tool', 'timelocker');
+    }
+
+    return true;
+}

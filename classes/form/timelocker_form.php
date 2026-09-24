@@ -117,6 +117,13 @@ class timelocker_form extends \moodleform {
         $mform->addHelpButton('shownote', 'shownote', 'tool_timelocker');
         $mform->setDefault('shownote', $settings->shownote ?? get_config('tool_timelocker', 'shownote'));
 
+        $mform->addElement('advcheckbox', 'shownotecoursepage', get_string('shownotecoursepage', 'tool_timelocker'));
+        $mform->addHelpButton('shownotecoursepage', 'shownotecoursepage', 'tool_timelocker');
+        $mform->setDefault(
+            'shownotecoursepage',
+            $settings->shownotecoursepage ?? get_config('tool_timelocker', 'shownotecoursepage')
+        );
+
         $mform->addElement('advcheckbox', 'resetunselected', get_string('resetunselected', 'tool_timelocker'));
         $mform->addHelpButton('resetunselected', 'resetunselected', 'tool_timelocker');
         $mform->setDefault('resetunselected', $settings->resetunselected ?? 0);

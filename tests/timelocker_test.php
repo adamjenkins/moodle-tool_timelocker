@@ -153,6 +153,7 @@ final class timelocker_test extends \advanced_testcase {
         $formdata->sessionlength = 7;
         $formdata->activitiespersession = 1;
         $formdata->shownote = 1;
+        $formdata->shownotecoursepage = 1;
         $formdata->resetunselected = 0;
         $formdata->cmids = [$cm1, $cm2];
         $formdata->shownote_cmids = [$cm1];
@@ -167,6 +168,7 @@ final class timelocker_test extends \advanced_testcase {
         $this->assertSame(7, (int) $row->sessionlength);
         $this->assertSame(1, (int) $row->activitiespersession);
         $this->assertSame(1, (int) $row->shownote);
+        $this->assertSame(1, (int) $row->shownotecoursepage);
 
         $items = $DB->get_records('tool_timelocker_items', ['timelockerid' => $row->id], 'cmid ASC');
         $this->assertCount(2, $items);

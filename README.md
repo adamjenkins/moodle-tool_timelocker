@@ -60,12 +60,28 @@ region it prefers (`$PAGE->add_header_extras()`) was only added in Moodle 5.2:
 | 5.2 and later | Near the activity's dates, in the same region as other activity-page notices |
 | 5.0, 5.1 | At the top of the activity page |
 
+### On the course page
+
+With **Also show notes on the course page** ticked on the Time locker form, the
+same notes also appear on the course page (and single-section pages), as a
+compact line at the bottom of each activity's card. The per-activity
+"Show note" checkboxes still decide which activities have a note. Notes are
+only sent for activities the viewer can see.
+
+Moodle has no API for a plugin to add to another plugin's activity on the
+course page, so the notes are rendered server-side into a hidden container and
+a small JavaScript module moves each one into its activity (and puts it back
+if, in editing mode, Moodle re-renders the activity after an edit). As a
+result, course formats that don't use Moodle's standard activity markup (some
+third-party formats) don't show the course-page note.
+
 ## Settings
 
 Site administration → Plugins → Admin tools → Time locker provides site-wide
-defaults for the scheduling form: session length, activities per session, and
+defaults for the scheduling form: session length, activities per session,
 whether the student-facing note is shown by default for newly selected
-activities.
+activities, and whether notes are also shown on the course page (off by
+default).
 
 ## Privacy
 

@@ -52,6 +52,13 @@ if ($hassiteconfig) {
             get_string('shownote_desc', 'tool_timelocker'),
             1
         ));
+
+        $settings->add(new admin_setting_configcheckbox(
+            'tool_timelocker/shownotecoursepage',
+            get_string('shownotecoursepage', 'tool_timelocker'),
+            get_string('shownotecoursepage_desc', 'tool_timelocker'),
+            0
+        ));
     }
 
     $ADMIN->add('tools', $settings);

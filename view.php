@@ -86,6 +86,7 @@ if ($config) {
         'sessionlength' => (int) get_config('tool_timelocker', 'sessionlength'),
         'activitiespersession' => (int) get_config('tool_timelocker', 'activitiespersession'),
         'shownote' => (int) get_config('tool_timelocker', 'shownote'),
+        'shownotecoursepage' => (int) get_config('tool_timelocker', 'shownotecoursepage'),
         'resetunselected' => 0,
     ];
 }

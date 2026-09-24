@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="admin/tool/timelocker/db" VERSION="2026071700" COMMENT="XMLDB file for Moodle tool_timelocker"
+<XMLDB PATH="admin/tool/timelocker/db" VERSION="2026092400" COMMENT="XMLDB file for Moodle tool_timelocker"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd">
   <TABLES>
@@ -12,6 +12,7 @@
         <FIELD NAME="sessionlength" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="7" SEQUENCE="false" COMMENT="Number of days per session"/>
         <FIELD NAME="activitiespersession" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="5" SEQUENCE="false" COMMENT="Number of activities to lock together per session"/>
         <FIELD NAME="shownote" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="1" SEQUENCE="false" COMMENT="Default value for showing the student-facing lock note on new selections"/>
+        <FIELD NAME="shownotecoursepage" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether switched-on lock notes are also shown on the course page"/>
         <FIELD NAME="resetunselected" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false" COMMENT="Whether unselected activities of this modtype have their lock time cleared"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp of last modification"/>
       </FIELDS>

@@ -125,7 +125,8 @@ class timelocker {
      *
      * @param stdClass $formdata Submitted form data: modtype, schedulestart,
      *                           sessionlength, activitiespersession, shownote,
-     *                           resetunselected, cmids[], shownote_cmids[].
+     *                           shownotecoursepage, resetunselected, cmids[],
+     *                           shownote_cmids[].
      * @param int $courseid The course ID.
      * @return stdClass The upserted tool_timelocker settings row.
      */
@@ -143,6 +144,7 @@ class timelocker {
         $settings->sessionlength = (int) $formdata->sessionlength;
         $settings->activitiespersession = (int) $formdata->activitiespersession;
         $settings->shownote = !empty($formdata->shownote) ? 1 : 0;
+        $settings->shownotecoursepage = !empty($formdata->shownotecoursepage) ? 1 : 0;
         $settings->resetunselected = !empty($formdata->resetunselected) ? 1 : 0;
         $settings->timemodified = time();
 

@@ -24,8 +24,11 @@
 
 namespace tool_timelocker;
 
+use tool_timelocker\local\locknote;
+
 /**
- * Hook listener that adds a student-facing grade-lock note to activity pages.
+ * Hook listeners that add the student-facing grade-lock note to activity
+ * pages and, where the course has opted in, to the course page.
  */
 class hook_callbacks {
     /**
@@ -42,7 +45,7 @@ class hook_callbacks {
     public static function add_activity_lock_note(
         \core\hook\output\before_standard_top_of_body_html_generation $hook
     ): void {
-        global $PAGE, $DB, $OUTPUT, $CFG;
+        global $PAGE, $OUTPUT;
 
         // NOTE: $PAGE->cm is a magic property (moodle_page::magic_get_cm()) and
         // moodle_page defines __get() but not __isset(), so isset()/empty() checks
@@ -52,49 +55,14 @@ class hook_callbacks {
         if (empty($cm)) {
             return;
         }
-
-        // Course-scoped lookup: the item must belong to a tool_timelocker
-        // configuration row for THIS course, so a note row can never affect
-        // an activity in another course (defense in depth).
-        $sql = "SELECT i.id
-                  FROM {tool_timelocker_items} i
-                  JOIN {tool_timelocker} t ON t.id = i.timelockerid
-                 WHERE i.cmid = :cmid AND i.shownote = 1 AND t.courseid = :courseid";
-        $item = $DB->get_record_sql($sql, ['cmid' => $cm->id, 'courseid' => $cm->course]);
-        if (!$item) {
-            return;
-        }
-
-        require_once($CFG->libdir . '/gradelib.php');
-        $items = \grade_item::fetch_all([
-            'courseid' => $cm->course,
-            'itemtype' => 'mod',
-            'itemmodule' => $cm->modname,
-            'iteminstance' => $cm->instance,
-        ]);
-        if (!$items) {
-            return;
-        }
-
-        // Earliest future locktime / lock state across the cm's grade items.
-        $locktime = 0;
-        $lockedat = 0;
-        foreach ($items as $gi) {
-            if ($gi->is_locked()) {
-                $lockedat = $lockedat ? min($lockedat, (int) $gi->locked) : (int) $gi->locked;
-            }
-            $lt = (int) $gi->get_locktime();
-            if ($lt > 0) {
-                $locktime = $locktime ? min($locktime, $lt) : $lt;
-            }
-        }
-        if (!$lockedat && !$locktime) {
+        $state = locknote::for_cm($cm);
+        if (!$state) {
             return;
         }
 
         $html = $OUTPUT->render_from_template('tool_timelocker/locknote', [
-            'islocked' => (bool) $lockedat,
-            'date' => userdate($lockedat ?: $locktime),
+            'islocked' => $state['islocked'],
+            'date' => userdate($state['time']),
         ]);
         // The add_header_extras() method on moodle_page only exists in Moodle 5.2
         // and up (MDL-87931); this plugin also supports 5.0 and 5.1. Where it exists
@@ -108,5 +76,46 @@ class hook_callbacks {
         } else {
             $hook->add_html($html);
         }
+    }
+
+    /**
+     * On a course page, add each switched-on lock note to its activity, when
+     * the course has the "also show notes on the course page" option on.
+     *
+     * No core hook lets a plugin add to an activity on the course page, so
+     * the notes are rendered here into a hidden container and the
+     * tool_timelocker/coursenotes module moves each into its activity card.
+     *
+     * @param \core\hook\output\before_footer_html_generation $hook
+     */
+    public static function add_course_page_lock_notes(
+        \core\hook\output\before_footer_html_generation $hook
+    ): void {
+        global $PAGE, $OUTPUT;
+
+        // The course page and single-section pages only, told apart by URL: other
+        // course pages (backup, reports, grade import/export, profile) set the very
+        // same 'course-view-<format>' page type but list no activities.
+        if (empty($PAGE->course->id) || !$PAGE->has_set_url()) {
+            return;
+        }
+        $iscoursepage = false;
+        foreach (['/course/view.php', '/course/section.php'] as $script) {
+            $iscoursepage = $iscoursepage || $PAGE->url->compare(new \moodle_url($script), URL_MATCH_BASE);
+        }
+        if (!$iscoursepage) {
+            return;
+        }
+        $notes = locknote::course_page_notes((int) $PAGE->course->id);
+        if (!$notes) {
+            return;
+        }
+
+        $context = [];
+        foreach ($notes as $cmid => $state) {
+            $context[] = ['cmid' => $cmid, 'islocked' => $state['islocked'], 'date' => userdate($state['time'])];
+        }
+        $hook->add_html($OUTPUT->render_from_template('tool_timelocker/coursenotes', ['notes' => $context]));
+        $PAGE->requires->js_call_amd('tool_timelocker/coursenotes', 'init');
     }
 }

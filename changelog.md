@@ -4,6 +4,13 @@ All notable changes to `tool_timelocker` are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- "Also show notes on the course page" option (per course, with a site-wide
+  default, off by default): switched-on student lock notes also appear inside
+  their activities' cards on the course page. Adds the
+  `tool_timelocker.shownotecoursepage` column (upgrade step 2026092400).
+
 ### Fixed
 
 - The activity table, and the session order lock dates are computed from, now
