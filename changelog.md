@@ -2,6 +2,14 @@
 
 All notable changes to `tool_timelocker` are documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- The activity table, and the session order lock dates are computed from, now
+  follow the course page: activities inside a subsection are listed where the
+  subsection sits instead of after every other section.
+
 ## [0.1.0] - 2026-07-17
 
 ### Added

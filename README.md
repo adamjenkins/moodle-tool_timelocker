@@ -24,6 +24,8 @@ locker**, picks an activity type, and sets a schedule start date, session
 length (in days) and how many activities go in each session. The tool splits
 the course's activities of that type into sessions in course order, and for
 each selected activity writes a lock date onto the end of its session window.
+Course order is the order activities appear on the course page: an activity
+inside a subsection counts at the subsection's position.
 
 Applying the schedule calls `set_locktime()` on every `itemtype = 'mod'` grade
 item belonging to the selected activities. It does not lock anything itself:

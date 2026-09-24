@@ -282,6 +282,46 @@ final class timelocker_test extends \advanced_testcase {
     }
 
     /**
+     * Activities inside a subsection must be listed where the subsection sits
+     * on the course page, not after every other section. A subsection's
+     * content lives in a delegated section numbered after all listed
+     * sections, so walking sections by number puts it at the very end.
+     *
+     * @covers \tool_timelocker\timelocker::get_table_data
+     * @covers \tool_timelocker\local\course_order
+     */
+    public function test_get_table_data_subsection_order(): void {
+        global $CFG;
+        require_once($CFG->libdir . '/gradelib.php');
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['numsections' => 2], ['createsections' => true]);
+
+        // Section 1: q1, then the subsection (holding q2), then q3. Section 2: q4.
+        $q1 = $generator->create_module('quiz', ['course' => $course->id, 'grade' => 100, 'section' => 1]);
+        $subsection = $generator->create_module('subsection', ['course' => $course->id, 'section' => 1]);
+        $delegated = get_fast_modinfo($course->id)->get_section_info_by_component('mod_subsection', $subsection->id);
+        $q2 = $generator->create_module(
+            'quiz',
+            ['course' => $course->id, 'grade' => 100, 'section' => $delegated->section]
+        );
+        $q3 = $generator->create_module('quiz', ['course' => $course->id, 'grade' => 100, 'section' => 1]);
+        $q4 = $generator->create_module('quiz', ['course' => $course->id, 'grade' => 100, 'section' => 2]);
+
+        $mgr = new \tool_timelocker\timelocker();
+        $settings = (object) [
+            'id' => 0,
+            'courseid' => $course->id,
+            'modtype' => 'quiz',
+            'shownote' => 0,
+        ];
+        $rows = $mgr->get_table_data($settings);
+
+        $expected = array_map('intval', [$q1->cmid, $q2->cmid, $q3->cmid, $q4->cmid]);
+        $this->assertSame($expected, array_map('intval', array_column($rows, 'cmid')));
+    }
+
+    /**
      * Deleting a course must clean up its tool_timelocker configuration row
      * and all associated tool_timelocker_items rows, leaving no orphans.
      *

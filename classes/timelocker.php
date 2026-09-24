@@ -25,6 +25,7 @@
 namespace tool_timelocker;
 
 use stdClass;
+use tool_timelocker\local\course_order;
 
 /**
  * Computes staggered gradebook lock dates, applies them to native grade
@@ -182,8 +183,9 @@ class timelocker {
     }
 
     /**
-     * Build the ordered activity table for the settings' modtype, in course
-     * order, describing each activity's current lock state and selection.
+     * Build the ordered activity table for the settings' modtype, in course-page
+     * order (activities in a subsection appear where the subsection sits),
+     * describing each activity's current lock state and selection.
      *
      * @param stdClass $settings A tool_timelocker settings row (courseid, modtype, shownote, id if saved).
      * @return array Ordered list of rows: [cmid, name, gradeitemids[], locktime, selected, shownote].
@@ -205,7 +207,7 @@ class timelocker {
 
         $modinfo = get_fast_modinfo($courseid);
         $rows = [];
-        foreach ($modinfo->get_instances_of($modtype) as $cm) {
+        foreach (course_order::sort($modinfo, $modinfo->get_instances_of($modtype)) as $cm) {
             if ($cm->deletioninprogress) {
                 continue;
             }
