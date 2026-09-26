@@ -206,4 +206,34 @@ final class locknote_test extends \advanced_testcase {
 
         $this->assertSame([], locknote::course_page_notes($other->id));
     }
+
+    /**
+     * Timelocker stays quiet on an activity activitydates already shows a note for.
+     */
+    public function test_defers_to_activitydates(): void {
+        global $DB;
+        if (!class_exists('\tool_activitydates\locks\local\locknote')) {
+            $this->markTestSkipped('tool_activitydates 2.x is not installed.');
+        }
+        $this->resetAfterTest();
+        [$course, $cms, $student] = $this->create_fixture();
+        $this->configure($course->id, [$cms[0]->id, $cms[1]->id], [$cms[0]->id, $cms[1]->id], 1);
+        $lockid = $DB->insert_record('tool_activitydates_lock', (object) [
+            'courseid' => $course->id,
+            'modtype' => 'quiz',
+            'shownotecoursepage' => 1,
+        ]);
+        $DB->insert_record('tool_activitydates_lockitem', (object) [
+            'lockid' => $lockid,
+            'cmid' => $cms[0]->id,
+            'shownote' => 1,
+        ]);
+        $this->setUser($student);
+
+        $this->assertNull(locknote::for_cm($cms[0]));
+        $this->assertNotNull(locknote::for_cm($cms[1]));
+        $notes = locknote::course_page_notes($course->id);
+        $this->assertArrayNotHasKey((int) $cms[0]->id, $notes);
+        $this->assertArrayHasKey((int) $cms[1]->id, $notes);
+    }
 }

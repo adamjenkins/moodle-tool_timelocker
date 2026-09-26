@@ -64,6 +64,10 @@ class locknote {
     public static function for_cm(cm_info $cm): ?array {
         global $CFG, $DB;
 
+        if (self::activitydates_shows((int) $cm->id, false)) {
+            return null;
+        }
+
         // Course-scoped lookup: the item must belong to a tool_timelocker
         // configuration row for THIS course, so a note row can never affect
         // an activity in another course (defense in depth).
@@ -123,6 +127,7 @@ class locknote {
             if (
                 isset($notecmids[(int) $cm->id]) && $cm->uservisible
                 && $cm->is_visible_on_course_page() && !$cm->deletioninprogress
+                && !self::activitydates_shows((int) $cm->id, true)
             ) {
                 $itemsbycm[(int) $cm->id] = [];
                 $cmidbyinstance[$cm->modname][(int) $cm->instance] = (int) $cm->id;
@@ -149,5 +154,17 @@ class locknote {
             }
         }
         return $notes;
+    }
+
+    /**
+     * Whether tool_activitydates (2.0.0+) already shows a note for this activity.
+     *
+     * @param int $cmid The course module ID.
+     * @param bool $coursepage True for the course page.
+     * @return bool
+     */
+    private static function activitydates_shows(int $cmid, bool $coursepage): bool {
+        return class_exists('\tool_activitydates\locks\local\locknote')
+            && \tool_activitydates\locks\local\locknote::shows_note($cmid, $coursepage);
     }
 }
