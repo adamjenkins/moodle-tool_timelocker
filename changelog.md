@@ -11,6 +11,14 @@ All notable changes to `tool_timelocker` are documented in this file.
   their activities' cards on the course page. Adds the
   `tool_timelocker.shownotecoursepage` column (upgrade step 2026092400).
 
+### Changed
+
+- Superseded by `tool_activitydates` 2.0 (Grade locks tab). When
+  `tool_activitydates` 2.0+ already shows a student lock note for an activity,
+  on its page or on the course page, Time locker does not add its own, so a
+  student sees one note. CI installs `tool_activitydates` so the deferral test
+  runs.
+
 ### Fixed
 
 - The activity table, and the session order lock dates are computed from, now
