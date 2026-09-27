@@ -1,5 +1,11 @@
 # Time locker (`tool_timelocker`)
 
+> **Superseded by `tool_activitydates` 2.0** (its **Grade locks** tab). The two
+> can run on the same site; there is no data migration; existing gradebook lock
+> dates stay in force. When both plugins would show a student lock note for the
+> same activity, Time locker leaves it to `tool_activitydates`, so students see
+> one note.
+
 A Moodle admin tool that bulk-schedules gradebook **lock-after dates** across
 a course's gradable activities on a timed-session basis. Pick a module type
 (quizzes, assignments, and any other activity with a gradebook grade item),
@@ -74,6 +80,12 @@ a small JavaScript module moves each one into its activity (and puts it back
 if, in editing mode, Moodle re-renders the activity after an edit). As a
 result, course formats that don't use Moodle's standard activity markup (some
 third-party formats) don't show the course-page note.
+
+### Alongside tool_activitydates
+
+If `tool_activitydates` 2.0 or later is installed and shows a note for an
+activity (on the activity page, or on the course page when its own course-page
+option is on), Time locker does not add a second note there.
 
 ## Settings
 
