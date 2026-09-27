@@ -9,6 +9,9 @@ description: |
   session's lock date straight into the grade items' native `locktime`.
   Core's grade-lock enforcement takes it from there — no custom locking
   engine involved.
+
+  Discontinued: 0.1.1 is the final release. Its features now live in
+  tool_activitydates 2.0+ as the Grade locks tab.
 labels:
   # Required disclosure labels — pick all that apply (RFC §4.7):
   #   fully-free | freemium | paid-service | external-account

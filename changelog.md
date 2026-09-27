@@ -2,7 +2,9 @@
 
 All notable changes to `tool_timelocker` are documented in this file.
 
-## [Unreleased]
+## [0.1.1] - 2026-09-27
+
+Final release. Time locker has moved to `tool_activitydates` 2.0 (Grade locks tab).
 
 ### Added
 
@@ -18,6 +20,7 @@ All notable changes to `tool_timelocker` are documented in this file.
   on its page or on the course page, Time locker does not add its own, so a
   student sees one note. CI installs `tool_activitydates` so the deferral test
   runs.
+- The README opens with the move announcement and how to switch over.
 
 ### Fixed
 

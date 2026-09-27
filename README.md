@@ -1,10 +1,31 @@
 # Time locker (`tool_timelocker`)
 
-> **Superseded by `tool_activitydates` 2.0** (its **Grade locks** tab). The two
-> can run on the same site; there is no data migration; existing gradebook lock
-> dates stay in force. When both plugins would show a student lock note for the
-> same activity, Time locker leaves it to `tool_activitydates`, so students see
-> one note.
+## Time locker has moved to Activity dates
+
+**Time locker is discontinued. 0.1.1 is its final release.** Everything it does
+now lives in [Activity dates (`tool_activitydates`)](https://github.com/adamjenkins/moodle-tool_activitydates)
+2.0 and later, as the **Grade locks** tab next to the Activity dates tab. That
+tab schedules gradebook lock dates by session, writes the grade items' native
+lock dates, and shows the optional student notes.
+
+To switch:
+
+1. Install `tool_activitydates` 2.0 or later. It can run alongside Time locker
+   on the same site.
+2. In each course, open **Activity dates → Grade locks** and set the schedule
+   up again. Time locker's per-course settings and selections are **not**
+   migrated.
+3. Lock dates already written to the gradebook stay in force whatever you do.
+   They belong to the grade items, not to either plugin. Uninstalling Time
+   locker removes only its own settings tables.
+4. When your courses are moved over, uninstall Time locker.
+
+While both are installed, Time locker 0.1.1 leaves the student note to
+`tool_activitydates` wherever that shows one, so students never see two notes
+for the same activity. A lock date is a single value on the grade item, so
+whichever plugin saves last sets it.
+
+The documentation below describes Time locker as it was.
 
 A Moodle admin tool that bulk-schedules gradebook **lock-after dates** across
 a course's gradable activities on a timed-session basis. Pick a module type
